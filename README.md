@@ -1,3 +1,8 @@
+# Use
+```
+node main.js --help
+```
+
 # Production Build
 ```
 sbt fullOptJS
