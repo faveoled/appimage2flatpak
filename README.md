@@ -32,3 +32,10 @@ sbt fullOptJS
 ```
 sbt fastLinkJS
 ```
+# Install sample
+```
+cp target/scala-3.3.1/scala-js-tutorial-opt/main.js appimage2flatpak
+sed -i '1 i\#\!/usr/bin/env node' appimage2flatpak 
+chmod +x appimage2flatpak 
+sudo cp appimage2flatpak /usr/local/bin/
+```
