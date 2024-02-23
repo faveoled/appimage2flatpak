@@ -34,3 +34,6 @@ classes/
 # Visual Studio Code
 .vscode
 .metals
+.bloop
+project/project
+project/metals.sbt
