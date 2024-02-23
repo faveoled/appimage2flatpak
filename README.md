@@ -1,25 +1,26 @@
 # Use
 ```
-node main.js --help
+$ appimage2flatpak -h
 Usage: appimage2flatpak [OPTIONS]
 appimage2flatpak is a CLI utility for converting AppImage files to Flatpak manifests
 Options:
 
       --app-id  <arg>            Specifies application id. Reversed domain name
-                                 (e.g. io.github.user.superapp).
+                                 (e.g. io.github.user.Superapp).
       --app-name  <arg>          Specifies application name. Usually matches an
                                  executable name.
       --appimage-url  <arg>      Specifies appimage URL for download.
       --debug                    Enables debugging mode if specified. Enables
                                  detailed stacktraces for errors.
-      --repo-src  <arg>          Specifies a URL where to get raw template
-                                 files. Has a default value.
-      --runtime  <arg>           Specifies a Flatpak runtime.
-                                 'org.freedesktop.Platform' by default.
+      --repo-archive  <arg>      Specifies a URL where to get raw template
+                                 archive. Default:
+                                 https://github.com/faveoled/AppImage-Flatpak-Template/archive/refs/heads/foss.tar.gz
+      --runtime  <arg>           Specifies a Flatpak runtime. Default:
+                                 org.freedesktop.Platform
       --runtime-version  <arg>   Specifies a Flatpak runtime version. Default:
-                                 23.08.
+                                 23.08
       --sdk  <arg>               Specifies a Flatpak SDK. Default:
-                                 org.freedesktop.Sdk.
+                                 org.freedesktop.Sdk
   -h, --help                     Show help message
 
 ```
