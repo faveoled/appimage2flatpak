@@ -34,7 +34,7 @@ class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     name = "app-id",
     noshort = true,
     required = true,
-    descr = "Specifies application id. Reversed domain name (e.g. io.github.user.superapp).",
+    descr = "Specifies application id. Reversed domain name (e.g. io.github.user.Superapp).",
     validate = (arg => arg.length >= 1 && arg.contains("."))
   )
 
@@ -55,40 +55,41 @@ class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     validate = (_.length >= 1)
   )
 
+
   val repoSrc = opt[String](
     name = "repo-src",
     noshort = true,
     required = false,
-    descr = "Specifies a URL where to get raw template files. Has a default value.",
+    descr = s"Specifies a URL where to get raw template files. Default: ${Defaults.REPO_SRC}",
     validate = (_.length >= 1),
-    default = Some("https://raw.githubusercontent.com/faveoled/AppImage-Flatpak-Template/master"),
+    default = Some(Defaults.REPO_SRC),
   )
 
   val runtime = opt[String](
     name = "runtime",
     noshort = true,
     required = false,
-    descr = "Specifies a Flatpak runtime. 'org.freedesktop.Platform' by default.",
+    descr = s"Specifies a Flatpak runtime. Default: ${Defaults.RUNTIME}",
     validate = (_.length >= 1),
-    default = Some("org.freedesktop.Platform"),
+    default = Some(Defaults.RUNTIME),
   )
 
   val runtimeVersion = opt[String](
     name = "runtime-version",
     noshort = true,
     required = false,
-    descr = "Specifies a Flatpak runtime version. Default: 23.08.",
+    descr = s"Specifies a Flatpak runtime version. Default: ${Defaults.RUNTIME_VERSION}",
     validate = (a => a.length >= 1 && !a.contains("'")&& !a.contains("\"")),
-    default = Some("23.08"),
+    default = Some(Defaults.RUNTIME_VERSION),
   )
 
   val sdk = opt[String](
     name = "sdk",
     noshort = true,
     required = false,
-    descr = "Specifies a Flatpak SDK. Default: org.freedesktop.Sdk.",
+    descr = s"Specifies a Flatpak SDK. Default: ${Defaults.SDK}",
     validate = (_.length >= 1),
-    default = Some("org.freedesktop.Sdk"),
+    default = Some(Defaults.SDK),
   )
 
   val debug = opt[Boolean](
