@@ -1,6 +1,6 @@
 package app
 
-object Tempate {
+object Template {
   
   def replaceAllOccurrences(keyToReplacementMap: Map[String, String], inputStr: String): String = {
     val regexPattern = keyToReplacementMap.keys.mkString("|")

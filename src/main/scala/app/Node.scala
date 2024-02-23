@@ -32,6 +32,9 @@ object Node {
   def cp(filePath1: String, filePath2: String): Unit =
     node_fs.copyFileSync(filePath1, filePath2)
 
+  def mv(oldFile: String, newFile: String): Unit = {
+    node_fs.renameSync(oldFile, newFile)
+  }
 
   def exists(filePath: String): Boolean = {
     node_fs.existsSync(filePath)

@@ -56,13 +56,13 @@ class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
   )
 
 
-  val repoSrc = opt[String](
-    name = "repo-src",
+  val repoArchive = opt[String](
+    name = "repo-archive",
     noshort = true,
     required = false,
-    descr = s"Specifies a URL where to get raw template files. Default: ${Defaults.REPO_SRC}",
+    descr = s"Specifies a URL where to get raw template archive. Default: ${Defaults.REPO_ARCHIVE}",
     validate = (_.length >= 1),
-    default = Some(Defaults.REPO_SRC),
+    default = Some(Defaults.REPO_ARCHIVE),
   )
 
   val runtime = opt[String](
@@ -129,40 +129,26 @@ object App {
         println("WARN: failed to calculate AppImage's sha256 sum")
       }
 
-      val appdataTemplateName = s"org.app.name.appdata.xml"
-      val desktopTemplateName = s"org.app.name.desktop"
-      val builderTemplateName = s"org.app.name.yml"
-      val applyExtraName = "apply_extra.sh"
+      val archiveFilename = cliConf.repoArchive().substringAfterLast("/")
 
       Node.runProcess(
-        s"wget ${cliConf.repoSrc()}/${appdataTemplateName}",
+        s"wget -O ${archiveFilename} ${cliConf.repoArchive()}",
         Some(cliConf.appId()),
-        "Getting appdata template"
+        "Getting repository archive"
       )
 
       Node.runProcess(
-        s"wget ${cliConf.repoSrc()}/${desktopTemplateName}",
+        s"tar --strip-components=1 -xvf ${archiveFilename}",
         Some(cliConf.appId()),
-        "Getting desktop file template"
+        "Unpacking repo archive"
       )
 
       Node.runProcess(
-        s"wget ${cliConf.repoSrc()}/${builderTemplateName}",
+        s"rm ${archiveFilename}",
         Some(cliConf.appId()),
-        "Getting builder template"
+        "Remove source archive"
       )
 
-      Node.runProcess(
-        s"wget ${cliConf.repoSrc()}/${applyExtraName}",
-        Some(cliConf.appId()),
-        "Getting apply_extra.sh"
-      )
-
-      val appdataFile = Node.readFile(Node.resolve(cliConf.appId(), appdataTemplateName))
-      val desktopFile = Node.readFile(Node.resolve(cliConf.appId(), desktopTemplateName))
-      val builderFile = Node.readFile(Node.resolve(cliConf.appId(), builderTemplateName))
-      val applyExtraFile = Node.readFile(Node.resolve(cliConf.appId(), applyExtraName))
-      
       val appName = cliConf.appName.toOption.getOrElse(cliConf.appId().substringAfterLast("."))
       val replacements = Map(
         "TMPL_APP_ID" -> cliConf.appId(),
@@ -175,15 +161,25 @@ object App {
         "TMPL_SDK" -> cliConf.sdk()
       )
 
-      val newAppdataFile = Tempate.replaceAllOccurrences(replacements, appdataFile)
-      val newDesktopFile = Tempate.replaceAllOccurrences(replacements, desktopFile)
-      val newBuilderFile = Tempate.replaceAllOccurrences(replacements, builderFile)
-      val newApplyExtraFile = Tempate.replaceAllOccurrences(replacements, applyExtraFile)
+      val allFiles = Node.filesInDirRecursive(cliConf.appId())
+      println(s"All files: ${allFiles.length}")
+      val toBeProcessed = allFiles
+        .filter(file => Defaults.PROCESSABLE_EXTENSIONS.contains(file.substringAfterLast(".")))
+      println(s"To be: ${toBeProcessed.length}")
 
-      val appdataFileName = s"${cliConf.appId()}.appdata.xml"
-      val desktopFileName = s"${cliConf.appId()}.desktop"
-      val builderFileName = s"${cliConf.appId()}.yml"
-      val applyExtraFileName = "apply_extra.sh"
+      for (filePath <- toBeProcessed) {
+        println(s"Processing: ${filePath}")
+
+        val withReplacedContent = Template.replaceAllOccurrences(replacements, Node.readFile(filePath))
+        Node.writeFile(filePath, withReplacedContent)
+        val fileName = filePath.substringAfterLast("/")
+        if (fileName.contains("org.app.name")) {
+          val newFileName = fileName.replace("org.app.name", cliConf.appId())
+          val newFilePath = Node.resolve(filePath.substringBeforeLast("/"), newFileName)
+          println(s"Renaming $filePath to $newFilePath")
+          Node.mv(filePath, newFilePath)
+        }
+      }
 
       val unpackDir = s"${cliConf.appId()}-unpacked"
       Node.makeDir(unpackDir)
@@ -209,18 +205,10 @@ object App {
       })
 
 
-      Node.writeFile(Node.resolve(cliConf.appId(), appdataFileName), newAppdataFile)
-      if (!desktopFilePath.isDefined) {
-        Node.writeFile(Node.resolve(cliConf.appId(), desktopFileName), newDesktopFile)
-      }
-      Node.writeFile(Node.resolve(cliConf.appId(), builderFileName), newBuilderFile)
-      Node.writeFile(Node.resolve(cliConf.appId(), applyExtraFileName), newApplyExtraFile)
-
-      Node.rm(Node.resolve(cliConf.appId(), appdataTemplateName))
-      Node.rm(Node.resolve(cliConf.appId(), desktopTemplateName))
-      Node.rm(Node.resolve(cliConf.appId(), builderTemplateName))
-
       println(s"DONE: ${cliConf.appId()} directory is created")
+      println("Compile using:")
+      println(s"cd ${cliConf.appId()}")
+      println(s"flatpak run org.flatpak.Builder --force-clean --sandbox --user --install --ccache builddir ${cliConf.appId()}.yaml")
       return ()
     } catch {
       case e: Exception =>
