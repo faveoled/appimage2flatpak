@@ -37,3 +37,4 @@ classes/
 .bloop
 project/project
 project/metals.sbt
+package-lock.json
