@@ -1,27 +1,29 @@
 package app
 
-import typings.node.processMod.global.process
-import typings.node.childProcessMod as node_child_process
-import typings.node.utilMod as node_util
-import typings.node.fsMod as node_fs
-import typings.node.osMod as node_os
-import typings.node.pathMod as node_path
+import app.Node.runProcessGetOut
+import app.Node.runProcessPrintOut
+import org.rogach.scallop._
 import typings.node.bufferMod.global.Buffer
 import typings.node.bufferMod.global.BufferEncoding
 import typings.node.childProcessMod.ExecSyncOptionsWithStringEncoding
 import typings.node.fsMod.MakeDirectoryOptions
+import typings.node.processMod.global.process
+import typings.node.childProcessMod as node_child_process
+import typings.node.fsMod as node_fs
+import typings.node.osMod as node_os
+import typings.node.pathMod as node_path
+import typings.node.utilMod as node_util
+import typings.std.stdBooleans.`true`
+import typings.std.stdStrings.click
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 import StringExtensions.substringAfterLast
 import StringExtensions.substringAfterFirst
 import StringExtensions.substringBeforeFirst
 import StringExtensions.substringBeforeLast
-
-import scala.util.{Try, Success, Failure}
-
-import org.rogach.scallop._
-import typings.std.stdBooleans.`true`
-import typings.std.stdStrings.click
-import app.Node.runProcess
 
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
 
@@ -113,7 +115,7 @@ object App {
 
       val appimageFile = cliConf.appimageUrl().substringAfterLast("/")
       if (!Node.exists(appimageFile)) {
-          runProcess(
+          runProcessPrintOut(
             s"wget ${cliConf.appimageUrl()}",
             Option.empty,
             s"Downloading appimage from URL: ${cliConf.appimageUrl()}"
@@ -122,7 +124,7 @@ object App {
 
       val fileSize = Node.getFileSize(appimageFile)
       val sha256Sum: String = 
-        runProcess(
+        runProcessGetOut(
           s"sha256sum ${appimageFile}", Option.empty, "calculating sha256 for AppImage"
         ).substringBeforeFirst(" ")
       if (sha256Sum.length() != 64) {
@@ -131,19 +133,19 @@ object App {
 
       val archiveFilename = cliConf.repoArchive().substringAfterLast("/")
 
-      Node.runProcess(
+      Node.runProcessPrintOut(
         s"wget -O ${archiveFilename} ${cliConf.repoArchive()}",
         Some(cliConf.appId()),
         "Getting repository archive"
       )
 
-      Node.runProcess(
+      Node.runProcessPrintOut(
         s"tar --strip-components=1 -xvf ${archiveFilename}",
         Some(cliConf.appId()),
         "Unpacking repo archive"
       )
 
-      Node.runProcess(
+      Node.runProcessPrintOut(
         s"rm ${archiveFilename}",
         Some(cliConf.appId()),
         "Remove source archive"
@@ -206,7 +208,8 @@ object App {
 
 
       println(s"DONE: ${cliConf.appId()} directory is created")
-      println("Compile using:")
+      println()
+      println("⚙️ Compile using:")
       println(s"cd ${cliConf.appId()}")
       println(s"flatpak run org.flatpak.Builder --force-clean --sandbox --user --install --ccache builddir ${cliConf.appId()}.yaml")
       return ()
@@ -222,7 +225,7 @@ object App {
     }
 
   def findOffset(filePath: String): Int =
-    val output = Node.runProcess(s"readelf -h ${filePath}", Option.empty, "Reading source AppImage")
+    val output = Node.runProcessGetOut(s"readelf -h ${filePath}", Option.empty, "Reading source AppImage")
     val outputKeyVals =
       output.linesIterator
       .filter(line => line.contains(":"))
@@ -247,6 +250,6 @@ object App {
 
 
   def extractAppImage(offset: Int, destDirPath: String, appImagePath: String): Unit =
-    Node.runProcess(s"unsquashfs -force -offset ${offset} -dest ${destDirPath} ${appImagePath}", Option.empty, "Extracting source AppImage")
+    Node.runProcessPrintOut(s"unsquashfs -force -offset ${offset} -dest ${destDirPath} ${appImagePath}", Option.empty, "Extracting source AppImage")
 
 }

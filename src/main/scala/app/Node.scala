@@ -11,6 +11,7 @@ import typings.node.osMod as node_os
 import typings.node.pathMod as node_path
 import typings.node.utilMod as node_util
 import typings.node.fsMod.RmOptions
+import typings.node.childProcessMod.IOType
 
 object Node {
 
@@ -119,14 +120,45 @@ object Node {
           .headOption
     }
 
-  def runProcess(command: String, cwd: Option[String], details: String = ""): String = {
+  def runProcessGetOut(command: String, cwd: Option[String], details: String = ""): String = {
+    val result = runProcess(command, cwd, details, false)
+    result match {
+      case s: String => 
+        s
+      case _: Unit =>
+        throw Exception("Internal type error")
+    }
+  }
+
+  def runProcessPrintOut(command: String, cwd: Option[String], details: String = ""): Unit = {
+    val result = runProcess(command, cwd, details, true)
+    result match {
+      case s: String => 
+        throw Exception("Internal type error")
+      case u: Unit =>
+        u
+    }
+  }
+
+  private def runProcess(command: String, cwd: Option[String], details: String = "", inherit: Boolean): String | Unit = {
     val msg = if (details == "") then s"Running command `${command}`" else s"${details}"
     println(s"${msg}...")
     val options = ExecSyncOptionsWithStringEncoding(BufferEncoding.utf8)
-    cwd.foreach(cwdR => options.cwd = cwdR)
+    if (inherit) {
+      options.stdio = IOType.inherit
+    }
+    cwd match {
+      case Some(c) => 
+        options.cwd = c
+      case None => // ignore
+    }
     val output = node_child_process.execSync(command, options)
-    println(s"Done: ${details}")
-    output
+    if (inherit) {
+      return
+    } else {
+      println(s"Done: ${details}")
+      output
+    }
   }
 
 
